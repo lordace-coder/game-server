@@ -1,8 +1,5 @@
-// [PART: COCOBASE SDK / HTTP FETCH]
-// This is where you import your Cocobase SDK or Axios
-import axios from "axios";
 import { Cocobase } from "cocobase";
-import { Wallet } from "../types/documents";
+import { UserData, Wallet } from "../types/documents";
 import "dotenv/config";
 
 const db = new Cocobase({
@@ -11,10 +8,8 @@ const db = new Cocobase({
 });
 
 export class CocobaseHelper {
-  private static readonly API_URL = process.env.COCOBASE_URL;
-
   /**
-   * Get wallet - Returns full wallet object
+   * Get wallet - Returns full wallet object with populated user data
    */
   static async getWallet(userId: string): Promise<Wallet | null> {
     try {
@@ -23,12 +18,20 @@ export class CocobaseHelper {
           user_id: userId,
         },
         limit: 1,
+        populate: ["user"],
       });
       if (res.length === 0) {
         console.warn(`[DB] No wallet found for ${userId}`);
         return null;
       }
-      return res[0].data;
+
+      const walletData = res[0].data;
+      const user: UserData | null = res[0]?.data.user?.data;
+
+      return {
+        ...walletData,
+        user: user || undefined,
+      };
     } catch (e) {
       console.error("Cocobase Fetch Error", e);
       return null;

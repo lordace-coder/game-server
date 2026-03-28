@@ -166,6 +166,7 @@ export class PipShotHub {
           balance: wallet.coins_balance,
           usdt: wallet.usdt,
         },
+        user: wallet.user,
       }),
     );
   }
@@ -180,7 +181,23 @@ export class PipShotHub {
   }
 
   private broadcastToAll(message: any) {
-    const payload = JSON.stringify(message);
+    // Enrich broadcast message with full player data if it contains a playerId
+    const enrichedMessage = { ...message };
+
+    if (message.playerId && this.clients.has(message.playerId)) {
+      const session = this.clients.get(message.playerId)!;
+      enrichedMessage.player = {
+        userId: session.userId,
+        username: session.username,
+        wallet: {
+          balance: session.wallet.coins_balance,
+          usdt: session.wallet.usdt,
+        },
+        user: session.wallet.user,
+      };
+    }
+
+    const payload = JSON.stringify(enrichedMessage);
     for (const session of this.clients.values()) {
       if (session.ws.readyState === WebSocket.OPEN) {
         session.ws.send(payload);
