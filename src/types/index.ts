@@ -11,3 +11,5 @@ export interface GameResult {
     multiplier: number;
     results: Record<string, any>;
 }
+
+

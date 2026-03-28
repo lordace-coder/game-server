@@ -1,10 +1,14 @@
 // filepath: /home/patrick/Desktop/agalio-game-server/game-server/src/games/aviator/hub.ts
 import { WebSocket, Server as WSServer } from "ws";
 import { AviatorEngine } from "./engine";
+import { sessionManager } from "../../utils/sessionManager";
+import { CocobaseHelper } from "../../core/cocobase";
+import { Wallet } from "../../types/documents";
 
 interface ClientSession {
   userId: string;
   ws: WebSocket;
+  wallet: Wallet;
 }
 
 /**
@@ -29,17 +33,6 @@ export class AviatorHub {
     this.tickInterval = setInterval(() => {
       this.engine.onTick();
     }, 50);
-
-    // Handle WebSocket connections
-    wss.on("connection", (ws: WebSocket) => {
-      ws.on("message", (data: Buffer) => {
-        this.handleMessage(ws, data);
-      });
-
-      ws.on("close", () => {
-        this.handleDisconnect(ws);
-      });
-    });
   }
 
   private async handleMessage(ws: WebSocket, data: Buffer) {
@@ -76,19 +69,80 @@ export class AviatorHub {
 
   private async handleJoin(ws: WebSocket, message: any) {
     const userId = message.userId;
+    const MIN_BALANCE = 0.01; // Minimum balance to play (in coins)
 
+    console.log("all sessions ", sessionManager.getAllSessions());
     if (!userId) {
       ws.send(JSON.stringify({ error: "user_id required" }));
       return;
     }
 
-    // Store session
-    this.clients.set(userId, { userId, ws });
+    // Check if user is already in another game
+    if (sessionManager.isUserInGame(userId)) {
+      const existingSession = sessionManager.getUserSession(userId);
+      ws.send(
+        JSON.stringify({
+          error: `User already in ${existingSession?.gameType} game. Leave that game first.`,
+          code: "USER_ALREADY_IN_GAME",
+        }),
+      );
+      ws.close(1008, "User already in another game");
+      return;
+    }
+
+    // Fetch wallet from database
+    const wallet = await CocobaseHelper.getWallet(userId);
+    if (!wallet) {
+      ws.send(
+        JSON.stringify({
+          error: "Wallet not found",
+          code: "WALLET_NOT_FOUND",
+        }),
+      );
+      ws.close(1008, "Wallet not found");
+      return;
+    }
+
+    // Check minimum balance
+    if (wallet.coins_balance < MIN_BALANCE) {
+      ws.send(
+        JSON.stringify({
+          error: `Insufficient balance. Minimum required: ${MIN_BALANCE} coins. Your balance: ${wallet.coins_balance}`,
+          code: "INSUFFICIENT_BALANCE",
+          balance: wallet.coins_balance,
+          minRequired: MIN_BALANCE,
+        }),
+      );
+      ws.close(1008, "Insufficient balance");
+      return;
+    }
+
+    // Register user in this game
+    const wsId = `aviator_${userId}_${Date.now()}`;
+    const registered = sessionManager.registerUser(userId, "aviator", wsId);
+
+    if (!registered) {
+      ws.send(
+        JSON.stringify({
+          error: "Failed to register user session",
+          code: "SESSION_REGISTRATION_FAILED",
+        }),
+      );
+      ws.close(1011, "Failed to register session");
+      return;
+    }
+
+    // Store session with wallet
+    this.clients.set(userId, { userId, ws, wallet });
 
     ws.send(
       JSON.stringify({
         type: "welcome",
         playerId: userId,
+        wallet: {
+          balance: wallet.coins_balance,
+          usdt: wallet.usdt,
+        },
         state: {
           status: this.engine.status,
           multiplier: this.engine.multiplier,
@@ -103,6 +157,7 @@ export class AviatorHub {
 
     this.engine.handleDisconnect(session.userId);
     this.clients.delete(session.userId);
+    sessionManager.unregisterUser(session.userId);
   }
 
   private broadcastToAll(message: any) {
@@ -112,6 +167,20 @@ export class AviatorHub {
         session.ws.send(payload);
       }
     }
+  }
+
+  public handleConnection(ws: WebSocket, request: any) {
+    ws.on("message", (data: Buffer) => {
+      this.handleMessage(ws, data);
+    });
+
+    ws.on("close", () => {
+      this.handleDisconnect(ws);
+    });
+  }
+
+  public shutdown() {
+    if (this.tickInterval) clearInterval(this.tickInterval);
   }
 
   public destroy() {

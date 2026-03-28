@@ -1,8 +1,8 @@
-// filepath: /home/patrick/Desktop/agalio-game-server/game-server/src/games/pipshot/cocobase-tasks.ts
+// filepath: /home/patrick/Desktop/agalio-game-server/game-server/src/games/pipshot/CocobaseHelper-tasks.ts
 /**
- * PipShot Cocobase Integration Tasks
+ * PipShot CocobaseHelper Integration Tasks
  * Queue-based background tasks for reliable wallet and history updates
- * These should be called via Cocobase.queue.add() from engine.ts
+ * These should be called via CocobaseHelper.queue.add() from engine.ts
  */
 
 // ============================================================
@@ -13,10 +13,10 @@
  * Process winner payout - Background task
  * Called: endGame() → winner receives prize
  */
-// TODO: Implement via Cocobase.queue.add()
+// TODO: Implement via CocobaseHelper.queue.add()
 // export async function process_winner_payout(winnerId: string, prize: number) {
 //   try {
-//     const wallet = await Cocobase.getWallet(winnerId);
+//     const wallet = await CocobaseHelper.getWallet(winnerId);
 //     if (!wallet) {
 //       console.error(`[PAYOUT] Winner wallet not found: ${winnerId}`);
 //       return;
@@ -25,7 +25,7 @@
 //     const currentBalance = wallet.coins_balance || 0;
 //     const newBalance = currentBalance + prize;
 //
-//     await Cocobase.updateWallet(winnerId, newBalance);
+//     await CocobaseHelper.updateWallet(winnerId, newBalance);
 //     console.log(`[PAYOUT] Winner paid: ${winnerId} → $${newBalance} (+$${prize})`);
 //   } catch (error) {
 //     console.error(`[PAYOUT] Error: ${error}`);
@@ -36,10 +36,10 @@
  * Process house cut payment - Background task
  * Called: endGame() → platform fee to admin
  */
-// TODO: Implement via Cocobase.queue.add()
+// TODO: Implement via CocobaseHelper.queue.add()
 // export async function process_house_cut(houseCut: number) {
 //   try {
-//     const adminWallet = await Cocobase.getWallet("admin");
+//     const adminWallet = await CocobaseHelper.getWallet("admin");
 //     if (!adminWallet) {
 //       console.log(`[HOUSE] Admin wallet not found - skipping`);
 //       return;
@@ -48,7 +48,7 @@
 //     const currentBalance = adminWallet.coins_balance || 0;
 //     const newBalance = currentBalance + houseCut;
 //
-//     await Cocobase.updateWallet("admin", newBalance);
+//     await CocobaseHelper.updateWallet("admin", newBalance);
 //     console.log(`[HOUSE] House cut credited: $${houseCut} → Admin balance $${newBalance}`);
 //   } catch (error) {
 //     console.error(`[HOUSE] Error: ${error}`);
@@ -59,10 +59,10 @@
  * Process bet refund - Background task
  * Called: handleDisconnect() → refund when player leaves during WAITING
  */
-// TODO: Implement via Cocobase.queue.add()
+// TODO: Implement via CocobaseHelper.queue.add()
 // export async function process_bet_refund(userId: string, betAmount: number) {
 //   try {
-//     const wallet = await Cocobase.getWallet(userId);
+//     const wallet = await CocobaseHelper.getWallet(userId);
 //     if (!wallet) {
 //       console.error(`[REFUND] Wallet not found: ${userId}`);
 //       return;
@@ -71,7 +71,7 @@
 //     const currentBalance = wallet.coins_balance || 0;
 //     const newBalance = currentBalance + betAmount;
 //
-//     await Cocobase.updateWallet(userId, newBalance);
+//     await CocobaseHelper.updateWallet(userId, newBalance);
 //     console.log(`[REFUND] Refunded: ${userId} → $${newBalance} (+$${betAmount})`);
 //   } catch (error) {
 //     console.error(`[REFUND] Error: ${error}`);
@@ -86,7 +86,7 @@
  * Save game history - Background task
  * Called: endGame() → records full game session
  */
-// TODO: Implement via Cocobase.queue.add()
+// TODO: Implement via CocobaseHelper.queue.add()
 // export async function save_game_history(params: {
 //   roundId: string;
 //   winnerId: string;
@@ -105,7 +105,7 @@
 //   try {
 //     console.log(`[HISTORY] Saving game history: ${params.roundId}`);
 //
-//     const result = await Cocobase.createGameHistory({
+//     const result = await CocobaseHelper.createGameHistory({
 //       round_id: params.roundId,
 //       game_type: "pipshot",
 //       total_pot: params.totalPot,
@@ -133,7 +133,7 @@
 // ============================================================
 
 /**
- * Expected Cocobase.queue interface:
+ * Expected CocobaseHelper.queue interface:
  *
  * queue.add(taskName: string, params: any): Promise<void>
  *   - Enqueues task for async execution
@@ -142,12 +142,12 @@
  *   - Includes retry logic and error handling
  *
  * Example usage in engine.ts:
- *   await Cocobase.queue.add("process_winner_payout", { winnerId, prize });
- *   await Cocobase.queue.add("save_game_history", { roundId, ... });
- *   await Cocobase.queue.add("process_house_cut", { houseCut });
+ *   await CocobaseHelper.queue.add("process_winner_payout", { winnerId, prize });
+ *   await CocobaseHelper.queue.add("save_game_history", { roundId, ... });
+ *   await CocobaseHelper.queue.add("process_house_cut", { houseCut });
  *
  * Task registration:
- *   Cocobase.queue.registerTask("process_winner_payout", process_winner_payout);
- *   Cocobase.queue.registerTask("save_game_history", save_game_history);
- *   Cocobase.queue.registerTask("process_house_cut", process_house_cut);
+ *   CocobaseHelper.queue.registerTask("process_winner_payout", process_winner_payout);
+ *   CocobaseHelper.queue.registerTask("save_game_history", save_game_history);
+ *   CocobaseHelper.queue.registerTask("process_house_cut", process_house_cut);
  */

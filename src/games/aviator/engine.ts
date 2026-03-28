@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { WebSocket } from "ws";
-import { Cocobase } from "../../core/cocobase"; // Import our Accountant
+import { CocobaseHelper } from "../../core/cocobase"; // Import our Accountant
 
 // ============================================================
 // CONSTANTS
@@ -166,7 +166,7 @@ export class AviatorEngine extends EventEmitter {
       this.totalStaked -= refund;
 
       // TODO: Must await directly here — player is leaving now
-      // await Cocobase.updateWallet(cacheEntry.id, cacheEntry.balance);
+      // await CocobaseHelper.updateWallet(cacheEntry.id, cacheEntry.balance);
     }
 
     player.connected = false;
@@ -184,10 +184,10 @@ export class AviatorEngine extends EventEmitter {
     if (amount <= 0)
       return ws.send(JSON.stringify({ error: "Invalid stake amount" }));
 
-    // 1. Check local cache, if empty, fetch from Cocobase
+    // 1. Check local cache, if empty, fetch from CocobaseHelper
     let cacheEntry = this.walletCache.get(userId);
     if (!cacheEntry) {
-      const balance = await Cocobase.getBalance(userId);
+      const balance = await CocobaseHelper.getBalance(userId);
       // TODO: Handle wallet not found case
       cacheEntry = { id: userId, balance };
       this.walletCache.set(userId, cacheEntry);
@@ -251,7 +251,7 @@ export class AviatorEngine extends EventEmitter {
       const cacheEntry = this.walletCache.get(userId);
       if (cacheEntry) {
         cacheEntry.balance += payout;
-        // TODO: Fire-and-forget queue write via Cocobase.queue.add()
+        // TODO: Fire-and-forget queue write via CocobaseHelper.queue.add()
         // queue.add("write_wallet_task", { walletId: cacheEntry.id, balance: cacheEntry.balance });
       }
 
@@ -370,7 +370,7 @@ export class AviatorEngine extends EventEmitter {
       }
     }
 
-    // TODO: Queue background tasks for reliable execution via Cocobase.queue.add()
+    // TODO: Queue background tasks for reliable execution via CocobaseHelper.queue.add()
     // Flush all dirty wallet entries — non-blocking
     // queue.add("write_wallet_task", {
     //   wallets: Array.from(this.walletCache.entries()).map(([id, entry]) => ({

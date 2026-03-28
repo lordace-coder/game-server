@@ -1,39 +1,88 @@
 // [PART: COCOBASE SDK / HTTP FETCH]
 // This is where you import your Cocobase SDK or Axios
-import axios from 'axios'; 
+import axios from "axios";
+import { Cocobase } from "cocobase";
+import { Wallet } from "../types/documents";
+import "dotenv/config";
 
-export class Cocobase {
-    private static readonly API_URL = process.env.COCOBASE_URL;
+const db = new Cocobase({
+  apiKey: process.env.COCOBASE_API_KEY || "",
+  projectId: process.env.COCOBASE_PROJECT_ID || "",
+});
 
-    /**
-     * Get balance - Called once when player enters a game
-     */
-    static async getBalance(userId: string): Promise<number> {
-        try {
-            // TODO: Replace with your actual Cocobase SDK call
-            // const res = await cocobase.db.collection('wallets').where({userId}).get();
-            // return res.data[0].balance;
-            console.log(`[DB] Fetching balance for ${userId}`);
-            return 1000.00; // Mock
-        } catch (e) {
-            console.error("Cocobase Fetch Error", e);
-            return 0;
-        }
+export class CocobaseHelper {
+  private static readonly API_URL = process.env.COCOBASE_URL;
+
+  /**
+   * Get wallet - Returns full wallet object
+   */
+  static async getWallet(userId: string): Promise<Wallet | null> {
+    try {
+      const res = await db.listDocuments<Wallet>("wallets", {
+        filters: {
+          user_id: userId,
+        },
+        limit: 1,
+      });
+      if (res.length === 0) {
+        console.warn(`[DB] No wallet found for ${userId}`);
+        return null;
+      }
+      return res[0].data;
+    } catch (e) {
+      console.error("Cocobase Fetch Error", e);
+      return null;
     }
+  }
 
-    /**
-     * Update balance - Fire-and-forget (No 'await' in hot loops)
-     */
-    static syncWallet(userId: string, amount: number) {
-        // We don't 'await' this so the game doesn't lag
-        console.log(`[DB] Syncing ${userId} balance: ${amount}`);
-        // cocobase.db.collection('wallets').doc(userId).update({ balance: amount });
+  /**
+   * Get balance - Called once when player enters a game
+   */
+  static async getBalance(userId: string): Promise<number> {
+    try {
+      const res = await db.listDocuments<Wallet>("wallets", {
+        filters: {
+          user_id: userId,
+        },
+        limit: 1,
+      });
+      if (res.length === 0) {
+        console.warn(`[DB] No wallet found for ${userId}, returning 0`);
+        return 0;
+      }
+      return res[0].data.coins_balance;
+    } catch (e) {
+      console.error("Cocobase Fetch Error", e);
+      return 0;
     }
+  }
 
-    /**
-     * Save Game History
-     */
-    static saveHistory(gameType: string, data: any) {
-        // cocobase.db.collection('history').add({ gameType, ...data, time: Date.now() });
+  /**
+   * Update balance - Fire-and-forget (No 'await' in hot loops)
+   */
+  static async syncWallet(userId: string, amount: number) {
+    const wallet = await db.listDocuments<Wallet>("wallets", {
+      filters: {
+        user_id: userId,
+      },
+      limit: 1,
+    });
+    if (wallet.length === 0) {
+      console.warn(`[DB] No wallet found for ${userId}, cannot sync`);
+      return;
     }
+    const currentBalance = wallet[0].data.coins_balance;
+    const newBalance = currentBalance + amount;
+    await db.updateDocument("wallets", wallet[0].id, {
+      coins_balance: newBalance,
+    });
+  }
+
+  /**
+   * Save Game History
+   */
+  static saveHistory(gameType: string, data: any) {
+    // db.createDocument("game_history", {
+    //  TODO HANDLE GAME HISTORY LATER
+  }
 }

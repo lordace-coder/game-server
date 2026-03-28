@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { WebSocket } from "ws";
-import { Cocobase } from "../../core/cocobase";
+import { CocobaseHelper } from "../../core/cocobase";
 
 const TICK_RATE = 20;
 const MIN_PLAYERS = 2;
@@ -268,7 +268,7 @@ export class PipShotEngine extends EventEmitter {
     }
 
     if (!st.walletCache.has(userId)) {
-      const balance = await Cocobase.getBalance(userId);
+      const balance = await CocobaseHelper.getBalance(userId);
       st.walletCache.set(userId, { id: userId, balance });
     }
 
@@ -541,7 +541,7 @@ export class PipShotEngine extends EventEmitter {
     const prize = Math.round((totalPot - houseCut) * 100) / 100;
     const winnerName = st.players.get(winnerId)!.username;
 
-    // TODO: Queue background tasks via Cocobase.queue.add()
+    // TODO: Queue background tasks via CocobaseHelper.queue.add()
 
     this.emit("broadcast", {
       type: "game_ended",

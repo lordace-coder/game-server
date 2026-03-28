@@ -14,6 +14,7 @@ export function setupGameRoutes(app: Router, wss: WSServer) {
   // Aviator endpoint: ws://localhost:8080/game/aviator
   app.get("/game/aviator", (req, res) => {
     wss.handleUpgrade(req, req.socket, Buffer.alloc(0), (ws) => {
+      
       aviatorWSS.emit("connection", ws, req);
     });
   });
