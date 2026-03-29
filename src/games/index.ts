@@ -24,21 +24,36 @@ export class GameServer {
   /**
    * Main WebSocket connection handler
    * Routes to appropriate game hub based on game_type query param
+   * Automatically joins user based on user_id query param
    */
   public handleConnection(ws: WebSocket, request: any) {
     try {
       const searchParams = new URL(request.url, `http://localhost`)
         .searchParams;
       const gameType = searchParams.get("game_type") || "aviator";
+      const userId = searchParams.get("user_id");
 
-      console.log(`[GameServer] New connection: game_type=${gameType}`);
+      if (!userId) {
+        ws.send(
+          JSON.stringify({
+            type: "error",
+            error: "user_id query parameter is required",
+          }),
+        );
+        ws.close();
+        return;
+      }
+
+      console.log(
+        `[GameServer] New connection: user_id=${userId}, game_type=${gameType}`,
+      );
 
       switch (gameType) {
         case "aviator":
-          this.aviatorHub.handleConnection(ws, request);
+          this.aviatorHub.handleConnection(ws, request, userId);
           break;
         case "pipshot":
-          this.pipShotHub.handleConnection(ws, request);
+          this.pipShotHub.handleConnection(ws, request, userId);
           break;
         default:
           ws.send(

@@ -41,22 +41,19 @@ export class PipShotHub {
     try {
       const message = JSON.parse(data.toString());
 
-      // Handle join
-      if (message.type === "join") {
-        await this.handleJoin(ws, message);
-        return;
-      }
-
-      // Get session
+      // Get session (user must be already joined)
       const session = Array.from(this.clients.values()).find(
         (c) => c.ws === ws,
       );
       if (!session) {
-        ws.send(JSON.stringify({ error: "Not authenticated" }));
+        ws.send(
+          JSON.stringify({ error: "Not authenticated. Connection dropped." }),
+        );
+        ws.close(1008, "Not authenticated");
         return;
       }
 
-      // Handle action
+      // Handle game actions
       await this.engine.handleAction(
         ws,
         message.action,
@@ -205,7 +202,17 @@ export class PipShotHub {
     }
   }
 
-  public handleConnection(ws: WebSocket, request: any) {
+  public handleConnection(ws: WebSocket, request: any, userId: string) {
+    // Auto-join user when connection is established
+    // Extract optional betAmount from query params, default to 5.0
+    const searchParams = new URL(request.url, `http://localhost`).searchParams;
+    const betAmount = parseFloat(searchParams.get("betAmount") || "5.0");
+
+    this.handleJoin(ws, { userId, betAmount }).catch((error) => {
+      console.error("[PipShot Hub] Auto-join error:", error);
+      ws.close(1011, "Failed to join game");
+    });
+
     ws.on("message", (data: Buffer) => {
       this.handleMessage(ws, data);
     });

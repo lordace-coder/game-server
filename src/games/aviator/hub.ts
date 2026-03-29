@@ -39,22 +39,19 @@ export class AviatorHub {
     try {
       const message = JSON.parse(data.toString());
 
-      // Handle join
-      if (message.type === "join") {
-        await this.handleJoin(ws, message);
-        return;
-      }
-
-      // Get session
+      // Get session (user must be already joined)
       const session = Array.from(this.clients.values()).find(
         (c) => c.ws === ws,
       );
       if (!session) {
-        ws.send(JSON.stringify({ error: "Not authenticated" }));
+        ws.send(
+          JSON.stringify({ error: "Not authenticated. Connection dropped." }),
+        );
+        ws.close(1008, "Not authenticated");
         return;
       }
 
-      // Handle action
+      // Handle game actions
       await this.engine.handleAction(
         ws,
         message.action,
@@ -185,7 +182,13 @@ export class AviatorHub {
     }
   }
 
-  public handleConnection(ws: WebSocket, request: any) {
+  public handleConnection(ws: WebSocket, request: any, userId: string) {
+    // Auto-join user when connection is established
+    this.handleJoin(ws, { userId }).catch((error) => {
+      console.error("[Aviator Hub] Auto-join error:", error);
+      ws.close(1011, "Failed to join game");
+    });
+
     ws.on("message", (data: Buffer) => {
       this.handleMessage(ws, data);
     });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Game Server Test - Dual User</title>
+    <title>Game Server Test - Advanced Debug</title>
     <style>
       * {
         margin: 0;
@@ -71,31 +71,27 @@
         font-weight: bold;
       }
 
-      .controls {
-        padding: 15px;
+      .setup-section {
+        padding: 12px;
         background: #0d0d0d;
         border-bottom: 1px solid #333;
         display: flex;
-        flex-wrap: wrap;
         gap: 8px;
       }
 
-      .controls input {
-        padding: 8px 12px;
+      .setup-section input,
+      .setup-section select {
+        padding: 6px 10px;
         background: #2a2a2a;
         border: 1px solid #444;
         color: #fff;
         border-radius: 4px;
         font-size: 12px;
-        flex: 0 1 calc(50% - 4px);
+        flex: 0 1 auto;
       }
 
-      .controls input::placeholder {
-        color: #666;
-      }
-
-      .controls button {
-        padding: 8px 15px;
+      .setup-section button {
+        padding: 6px 12px;
         background: #667eea;
         border: none;
         color: #fff;
@@ -103,41 +99,126 @@
         cursor: pointer;
         font-size: 12px;
         font-weight: bold;
-        flex: 0 1 calc(50% - 4px);
         transition: background 0.2s;
       }
 
-      .controls button:hover {
-        background: #5568d3;
-      }
-
-      .controls button:active {
-        transform: scale(0.98);
-      }
-
-      .player2 .controls button {
+      .player2 .setup-section button {
         background: #f5576c;
       }
 
-      .player2 .controls button:hover {
+      .player2 .setup-section button:hover {
         background: #e53e57;
+      }
+
+      .setup-section button:hover {
+        background: #5568d3;
+      }
+
+      .json-input-section {
+        padding: 12px;
+        background: #0d0d0d;
+        border-bottom: 1px solid #333;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .json-input-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .json-input-section textarea {
+        padding: 8px;
+        background: #1a1a1a;
+        border: 1px solid #444;
+        color: #fff;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: "Courier New", monospace;
+        resize: vertical;
+        height: 80px;
+      }
+
+      .json-input-section button {
+        padding: 8px 15px;
+        background: #4ade80;
+        border: none;
+        color: #000;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+
+      .json-input-section button:hover {
+        background: #22c55e;
+      }
+
+      .player2 .json-input-section button {
+        background: #f5576c;
+        color: #fff;
+      }
+
+      .player2 .json-input-section button:hover {
+        background: #e53e57;
+      }
+
+      .filter-section {
+        padding: 10px 12px;
+        background: #0d0d0d;
+        border-bottom: 1px solid #333;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .filter-section input {
+        padding: 6px 10px;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        color: #fff;
+        border-radius: 4px;
+        font-size: 12px;
+        flex: 1;
+      }
+
+      .filter-section input::placeholder {
+        color: #666;
+      }
+
+      .filter-section button {
+        padding: 6px 12px;
+        background: #60a5fa;
+        border: none;
+        color: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .filter-section button:hover {
+        background: #3b82f6;
       }
 
       .logs {
         flex: 1;
         overflow-y: auto;
-        padding: 15px;
+        padding: 12px;
         background: #0a0a0a;
-        font-size: 12px;
+        font-size: 11px;
         font-family: "Courier New", monospace;
       }
 
       .log-entry {
-        margin: 8px 0;
+        margin: 6px 0;
         padding: 8px;
         background: #1a1a1a;
         border-left: 3px solid #667eea;
         border-radius: 3px;
+        word-break: break-all;
       }
 
       .player2 .log-entry {
@@ -160,25 +241,19 @@
         background: #0a1a2e;
       }
 
+      .log-entry.hidden {
+        display: none;
+      }
+
       .log-timestamp {
         color: #666;
-        font-size: 11px;
+        font-size: 10px;
       }
 
-      .game-select {
-        padding: 15px;
-        background: #0d0d0d;
-        border-bottom: 1px solid #333;
-      }
-
-      .game-select select {
-        width: 100%;
-        padding: 8px;
-        background: #2a2a2a;
-        border: 1px solid #444;
-        color: #fff;
-        border-radius: 4px;
-        cursor: pointer;
+      .log-type {
+        color: #fbbf24;
+        font-weight: bold;
+        margin: 0 6px;
       }
 
       .connected {
@@ -213,14 +288,6 @@
       <div class="player-section">
         <div class="header">🎮 Player 1</div>
 
-        <div class="game-select">
-          <select id="game1" onchange="updateGame(1)">
-            <option value="">Select Game</option>
-            <option value="aviator">Aviator</option>
-            <option value="pipshot">PipShot</option>
-          </select>
-        </div>
-
         <div class="status">
           <div class="status-item">
             <span class="status-label">Connection:</span>
@@ -233,19 +300,48 @@
             <span class="status-value" id="userId1">Not set</span>
           </div>
           <div class="status-item">
-            <span class="status-label">Balance:</span>
-            <span class="status-value" id="balance1">$0.00</span>
+            <span class="status-label">Game:</span>
+            <span class="status-value" id="game1">Not selected</span>
           </div>
         </div>
 
-        <div class="controls" id="controls1">
+        <div class="setup-section">
           <input
             type="text"
             id="userId1Input"
-            placeholder="Enter User ID"
+            placeholder="User ID"
             value="user1"
           />
+          <select id="game1Select">
+            <option value="">Select Game</option>
+            <option value="aviator">Aviator</option>
+            <option value="pipshot">PipShot</option>
+          </select>
           <button onclick="connectPlayer(1)">Connect</button>
+        </div>
+
+        <div class="json-input-section">
+          <label style="font-size: 12px; color: #888"
+            >📤 Send JSON Message:</label
+          >
+          <textarea
+            id="jsonInput1"
+            placeholder='{"type":"join","userId":"user1"}'
+            spellcheck="false"
+          ></textarea>
+          <div class="json-input-row">
+            <button onclick="sendJSON(1)">Send Message</button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <input
+            type="text"
+            id="filter1"
+            placeholder="Filter logs by type (e.g., 'player_staked', 'error', or leave empty)"
+            onkeyup="applyFilter(1)"
+          />
+          <button onclick="clearLogs(1)">Clear Logs</button>
         </div>
 
         <div class="logs" id="logs1"></div>
@@ -254,14 +350,6 @@
       <!-- Player 2 -->
       <div class="player-section">
         <div class="header player2">🎮 Player 2</div>
-
-        <div class="game-select">
-          <select id="game2" onchange="updateGame(2)">
-            <option value="">Select Game</option>
-            <option value="aviator">Aviator</option>
-            <option value="pipshot">PipShot</option>
-          </select>
-        </div>
 
         <div class="status">
           <div class="status-item">
@@ -275,19 +363,48 @@
             <span class="status-value" id="userId2">Not set</span>
           </div>
           <div class="status-item">
-            <span class="status-label">Balance:</span>
-            <span class="status-value" id="balance2">$0.00</span>
+            <span class="status-label">Game:</span>
+            <span class="status-value" id="game2">Not selected</span>
           </div>
         </div>
 
-        <div class="controls" id="controls2">
+        <div class="setup-section">
           <input
             type="text"
             id="userId2Input"
-            placeholder="Enter User ID"
+            placeholder="User ID"
             value="user2"
           />
+          <select id="game2Select">
+            <option value="">Select Game</option>
+            <option value="aviator">Aviator</option>
+            <option value="pipshot">PipShot</option>
+          </select>
           <button onclick="connectPlayer(2)">Connect</button>
+        </div>
+
+        <div class="json-input-section">
+          <label style="font-size: 12px; color: #888"
+            >📤 Send JSON Message:</label
+          >
+          <textarea
+            id="jsonInput2"
+            placeholder='{"type":"join","userId":"user2"}'
+            spellcheck="false"
+          ></textarea>
+          <div class="json-input-row">
+            <button onclick="sendJSON(2)">Send Message</button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <input
+            type="text"
+            id="filter2"
+            placeholder="Filter logs by type (e.g., 'player_staked', 'error', or leave empty)"
+            onkeyup="applyFilter(2)"
+          />
+          <button onclick="clearLogs(2)">Clear Logs</button>
         </div>
 
         <div class="logs" id="logs2"></div>
@@ -296,164 +413,194 @@
 
     <script>
       const clients = {
-        1: { ws: null, game: null, userId: null },
-        2: { ws: null, game: null, userId: null },
+        1: { ws: null, game: "", logs: [], allLogs: [] },
+        2: { ws: null, game: "", logs: [], allLogs: [] },
       };
 
-      function log(playerNum, message, type = "info") {
-        const logsElement = document.getElementById(`logs${playerNum}`);
-        const entry = document.createElement("div");
-        entry.className = `log-entry ${type}`;
-        const timestamp = new Date().toLocaleTimeString();
-        entry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span> ${message}`;
-        logsElement.appendChild(entry);
-        logsElement.scrollTop = logsElement.scrollHeight;
-      }
-
-      function updateStatus(playerNum, connected, balance = null) {
-        const statusEl = document.getElementById(`status${playerNum}`);
-        const balanceEl = document.getElementById(`balance${playerNum}`);
-        const userIdEl = document.getElementById(`userId${playerNum}`);
-
-        if (connected) {
-          statusEl.textContent = "✅ Connected";
-          statusEl.className = "status-value connected";
-        } else {
-          statusEl.textContent = "❌ Disconnected";
-          statusEl.className = "status-value disconnected";
-        }
-
-        if (balance !== null) {
-          balanceEl.textContent = `$${balance.toFixed(2)}`;
-        }
-
-        userIdEl.textContent = clients[playerNum].userId || "Not set";
-      }
-
       function connectPlayer(playerNum) {
-        const userId = document.getElementById(`userId${playerNum}Input`).value;
-        const game = document.getElementById(`game${playerNum}`).value;
+        const userIdInput = document.getElementById(`userId${playerNum}Input`);
+        const gameSelect = document.getElementById(`game${playerNum}Select`);
+        const userId = userIdInput.value.trim();
+        const game = gameSelect.value;
 
         if (!userId) {
-          log(playerNum, "Please enter a User ID", "error");
+          log(playerNum, "error", "User ID is required");
           return;
         }
 
         if (!game) {
-          log(playerNum, "Please select a game", "error");
+          log(playerNum, "error", "Please select a game");
           return;
         }
 
-        clients[playerNum].userId = userId;
-        clients[playerNum].game = game;
-
-        const wsUrl = `ws://localhost:8080/game/${game}`;
-        log(playerNum, `Connecting to ${wsUrl}...`, "info");
+        // Build WebSocket URL with query parameters
+        // Server automatically joins user on connection
+        let wsUrl = `ws://localhost:8080?user_id=${encodeURIComponent(userId)}&game_type=${encodeURIComponent(game)}`;
 
         try {
           const ws = new WebSocket(wsUrl);
-          clients[playerNum].ws = ws;
 
           ws.onopen = () => {
-            log(playerNum, "✅ WebSocket connected", "info");
-            updateStatus(playerNum, true);
-
-            // Send join message
-            const joinMsg = { type: "join", userId };
-            ws.send(JSON.stringify(joinMsg));
-            log(playerNum, `📤 Sent: ${JSON.stringify(joinMsg)}`, "sent");
+            log(playerNum, "event", "⏳ Connected to server (auto-joining...)");
           };
 
           ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            log(playerNum, `📥 Received: ${JSON.stringify(data)}`, "info");
+            try {
+              const data = JSON.parse(event.data);
+              // Handle welcome message (auto-join successful)
+              if (data.type === "welcome") {
+                log(
+                  playerNum,
+                  "connected",
+                  `✅ Successfully joined ${game} game`,
+                );
+                document.getElementById(`status${playerNum}`).textContent =
+                  "🟢 Connected";
+                document
+                  .getElementById(`status${playerNum}`)
+                  .classList.remove("disconnected");
+                document.getElementById(`userId${playerNum}`).textContent =
+                  userId;
+                document.getElementById(`game${playerNum}`).textContent = game;
+                gameSelect.disabled = true;
+                userIdInput.disabled = true;
+              } else {
+                // Log all other messages
+                log(playerNum, data.type || "message", JSON.stringify(data));
+              }
+            } catch (e) {
+              log(playerNum, "raw", event.data);
+            }
           };
 
           ws.onerror = (error) => {
-            log(playerNum, `❌ Error: ${error.message}`, "error");
-            updateStatus(playerNum, false);
+            log(playerNum, "error", `WebSocket error: ${error.message}`);
           };
 
-          ws.onclose = () => {
-            log(playerNum, "❌ Disconnected", "error");
-            updateStatus(playerNum, false);
+          ws.onclose = (event) => {
+            const reason = event.reason || "Unknown reason";
+            const code = event.code || "Unknown";
+            log(
+              playerNum,
+              "disconnected",
+              `❌ Disconnected (${code}: ${reason})`,
+            );
+            document.getElementById(`status${playerNum}`).textContent =
+              "❌ Disconnected";
+            document
+              .getElementById(`status${playerNum}`)
+              .classList.add("disconnected");
+            gameSelect.disabled = false;
+            userIdInput.disabled = false;
           };
+
+          clients[playerNum].ws = ws;
+          clients[playerNum].game = game;
         } catch (error) {
-          log(playerNum, `❌ Connection failed: ${error.message}`, "error");
+          log(playerNum, "error", `Connection failed: ${error.message}`);
         }
       }
 
-      function updateGame(playerNum) {
-        const game = document.getElementById(`game${playerNum}`).value;
-        if (
-          clients[playerNum].ws &&
-          clients[playerNum].ws.readyState === WebSocket.OPEN
-        ) {
-          clients[playerNum].ws.close();
-          log(
-            playerNum,
-            "Closed previous connection. Please reconnect.",
-            "info",
-          );
-          updateStatus(playerNum, false);
-          clients[playerNum].ws = null;
-        }
-      }
+      function sendJSON(playerNum) {
+        const textarea = document.getElementById(`jsonInput${playerNum}`);
+        const jsonText = textarea.value.trim();
 
-      function sendAction(playerNum, action, payload) {
-        const ws = clients[playerNum].ws;
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-          log(playerNum, "❌ Not connected", "error");
+        if (!jsonText) {
+          log(playerNum, "warn", "JSON input is empty");
           return;
         }
-        const msg = { action, payload };
-        ws.send(JSON.stringify(msg));
-        log(playerNum, `📤 Sent: ${JSON.stringify(msg)}`, "sent");
-      }
 
-      // Add action buttons dynamically based on game selection
-      document.getElementById("game1").addEventListener("change", () => {
-        updateControlsForGame(1, document.getElementById("game1").value);
-      });
+        if (
+          !clients[playerNum].ws ||
+          clients[playerNum].ws.readyState !== WebSocket.OPEN
+        ) {
+          log(playerNum, "error", "Not connected to server");
+          return;
+        }
 
-      document.getElementById("game2").addEventListener("change", () => {
-        updateControlsForGame(2, document.getElementById("game2").value);
-      });
-
-      function updateControlsForGame(playerNum, game) {
-        const controlsEl = document.getElementById(`controls${playerNum}`);
-        const baseHTML = `
-                <input type="text" id="userId${playerNum}Input" placeholder="Enter User ID" value="user${playerNum}">
-                <button onclick="connectPlayer(${playerNum})">Connect</button>
-            `;
-
-        if (game === "aviator") {
-          controlsEl.innerHTML =
-            baseHTML +
-            `
-                    <input type="number" id="stake${playerNum}" placeholder="Stake amount" value="10" step="0.1">
-                    <button onclick="sendAction(${playerNum}, 'stake', {amount: parseFloat(document.getElementById('stake${playerNum}').value)})">Stake</button>
-                    <button onclick="sendAction(${playerNum}, 'cashout', {})">Cashout</button>
-                    <button onclick="sendAction(${playerNum}, 'cancel_stake', {})">Cancel Stake</button>
-                `;
-        } else if (game === "pipshot") {
-          controlsEl.innerHTML =
-            baseHTML +
-            `
-                    <input type="number" id="bet${playerNum}" placeholder="Bet amount" value="5" step="0.1">
-                    <button onclick="sendAction(${playerNum}, 'lock_bet', {})">Lock Bet</button>
-                    <button onclick="sendAction(${playerNum}, 'cancel_bet', {})">Cancel Bet</button>
-                    <select id="direction${playerNum}">
-                        <option value="up">UP</option>
-                        <option value="down">DOWN</option>
-                    </select>
-                    <button onclick="sendAction(${playerNum}, 'predict', {direction: document.getElementById('direction${playerNum}').value})">Predict</button>
-                `;
+        try {
+          const jsonData = JSON.parse(jsonText);
+          clients[playerNum].ws.send(JSON.stringify(jsonData));
+          log(playerNum, "sent", jsonText);
+          textarea.value = "";
+        } catch (error) {
+          log(playerNum, "error", `Invalid JSON: ${error.message}`);
         }
       }
 
-      log(1, "🎮 Player 1 ready", "info");
-      log(2, "🎮 Player 2 ready", "info");
+      function applyFilter(playerNum) {
+        const filterInput = document.getElementById(`filter${playerNum}`);
+        const filterText = filterInput.value.toLowerCase();
+        const logsDiv = document.getElementById(`logs${playerNum}`);
+        const logEntries = logsDiv.querySelectorAll(".log-entry");
+
+        logEntries.forEach((entry, index) => {
+          const logItem = clients[playerNum].allLogs[index];
+          if (!logItem) return;
+
+          const messageText = logItem.message.toLowerCase();
+          const typeText = logItem.type.toLowerCase();
+          const matches =
+            messageText.includes(filterText) || typeText.includes(filterText);
+
+          entry.classList.toggle("hidden", !matches && filterText !== "");
+        });
+      }
+
+      function clearLogs(playerNum) {
+        document.getElementById(`logs${playerNum}`).innerHTML = "";
+        clients[playerNum].logs = [];
+        clients[playerNum].allLogs = [];
+      }
+
+      function log(playerNum, type, message) {
+        const logsDiv = document.getElementById(`logs${playerNum}`);
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        const timestamp = new Date().toLocaleTimeString();
+        entry.innerHTML = `<span class="log-time">[${timestamp}]</span> <span class="log-type">${escapeHtml(type)}</span> ${escapeHtml(message)}`;
+        logsDiv.appendChild(entry);
+        logsDiv.scrollTop = logsDiv.scrollHeight;
+
+        const logItem = { type, message, timestamp };
+        clients[playerNum].logs.push(logItem);
+        clients[playerNum].allLogs.push(logItem);
+
+        // Check if there's an active filter
+        const filterInput = document.getElementById(`filter${playerNum}`);
+        if (filterInput && filterInput.value.trim()) {
+          applyFilter(playerNum);
+        }
+      }
+
+      function escapeHtml(text) {
+        const map = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        };
+        return text.replace(/[&<>"']/g, (m) => map[m]);
+      }
+
+      // Keyboard shortcuts: Ctrl+Enter to send JSON
+      document.addEventListener("DOMContentLoaded", () => {
+        document
+          .getElementById("jsonInput1")
+          .addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "Enter") {
+              sendJSON(1);
+            }
+          });
+        document
+          .getElementById("jsonInput2")
+          .addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "Enter") {
+              sendJSON(2);
+            }
+          });
+      });
     </script>
   </body>
 </html>
