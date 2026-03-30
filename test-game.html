@@ -449,11 +449,8 @@
               const data = JSON.parse(event.data);
               // Handle welcome message (auto-join successful)
               if (data.type === "welcome") {
-                log(
-                  playerNum,
-                  "connected",
-                  `✅ Successfully joined ${game} game`,
-                );
+                log(playerNum, data.type || "message", JSON.stringify(data));
+
                 document.getElementById(`status${playerNum}`).textContent =
                   "🟢 Connected";
                 document
