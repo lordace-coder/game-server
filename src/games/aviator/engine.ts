@@ -511,7 +511,6 @@ export class AviatorEngine extends EventEmitter {
       houseCut: actualHouseCut,
       results,
       playerIds: Object.keys(results),
-      timestamp: Date.now(),
     });
 
     this.emit("broadcast", {
