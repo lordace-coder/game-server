@@ -85,7 +85,9 @@ export class CocobaseHelper {
    * Save Game History
    */
   static saveHistory(gameType: string, data: any) {
-    // db.createDocument("game_history", {
-    //  TODO HANDLE GAME HISTORY LATER
+    db.createDocument("game-history",{
+      game:gameType,
+      ...data
+    })
   }
 }
