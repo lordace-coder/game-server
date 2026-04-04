@@ -19,7 +19,7 @@ wss.on("connection", (ws, request) => {
 // Standard HTTP health check
 app.get("/health", (req, res) => res.send("Server OK"));
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 2000;
 server.listen(PORT, () => {
   console.log(`🚀 Multi-Game Server running on port ${PORT}`);
 });
