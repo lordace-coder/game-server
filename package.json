@@ -1,6 +1,7 @@
 {
   "name": "multi-game-server",
   "version": "1.0.0",
+  "type": "module",
   "description": "High-performance modular game server",
   "main": "dist/index.js",
   "scripts": {
