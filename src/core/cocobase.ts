@@ -2,7 +2,7 @@ import { Cocobase } from "cocobase";
 import { UserData, Wallet } from "../types/documents";
 import "dotenv/config";
 
-const db = new Cocobase({
+export const db = new Cocobase({
   apiKey: process.env.COCOBASE_API_KEY || "",
   projectId: process.env.COCOBASE_PROJECT_ID || "",
 });
