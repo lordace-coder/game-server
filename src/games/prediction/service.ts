@@ -5,7 +5,7 @@
 //  - record user bets (deducting the stake from the wallet)
 //  - resolve (validate) a market: pay out winners from the losers' pool,
 //    minus the admin-defined house percentage.
-import { db } from "../../core/cocobase";
+import { db, CocobaseHelper } from "../../core/cocobase";
 import { Prediction, PredictionBet, PredictionStatus } from "../../types/documents";
 import {
   computeSettlement,
@@ -116,14 +116,14 @@ export class PredictionService {
     const amount = Math.floor(Number(input.amount));
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Invalid amount");
 
-    // Deduct stake from wallet.
+    // Deduct stake from wallet (server-side, authoritative). syncWallet applies
+    // a delta (currentBalance + delta) — same convention as the aviator/pipshot
+    // engines. Awaited so the debit is confirmed before the bet is recorded.
     const wallet = await this.getWallet(input.user_id);
     if (!wallet) throw new Error("Wallet not found");
     const balance = Number(wallet.data.coins_balance ?? 0);
     if (balance < amount) throw new Error("Insufficient balance");
-    await db.updateDocument(WALLETS, wallet.id, {
-      coins_balance: balance - amount,
-    });
+    await CocobaseHelper.syncWallet(input.user_id, -amount);
 
     const doc = await db.createDocument(BETS, {
       prediction_id: input.prediction_id,
@@ -172,10 +172,18 @@ export class PredictionService {
       market.data.house_percentage
     );
 
-    // Credit winners / refunds.
+    // Credit winners / refunds. Stakes were already debited at bet time, so we
+    // credit the full payout (stake back + winnings). Awaited so a failed
+    // credit surfaces as an error instead of silently leaving a winner unpaid.
     for (const p of settlement.payouts) {
       if (p.payout <= 0) continue;
-      await this.creditWallet(p.userId, p.payout);
+      await CocobaseHelper.syncWallet(p.userId, p.payout);
+    }
+
+    // Credit the house cut to the "admin" wallet — same convention the
+    // aviator/pipshot engines use for the platform's edge.
+    if (settlement.houseCut > 0) {
+      await CocobaseHelper.syncWallet("admin", settlement.houseCut);
     }
 
     // Mark bets.
@@ -198,6 +206,23 @@ export class PredictionService {
       total_pool: settlement.totalPool,
     });
 
+    // Persist round history (same helper the other games use).
+    CocobaseHelper.saveHistory("prediction", {
+      prediction_id: predictionId,
+      title: market.data.title,
+      winning_option: winningOption,
+      winning_label: market.data.options[winningOption],
+      total_pool: settlement.totalPool,
+      winners_stake: settlement.winnersStake,
+      losers_pool: settlement.losersPool,
+      distributed: settlement.distributable,
+      house_cut: settlement.houseCut,
+      house_percentage: market.data.house_percentage,
+      refunded: settlement.refunded,
+      bet_count: bets.length,
+      resolved_at: now,
+    });
+
     return settlement;
   }
 
@@ -208,17 +233,5 @@ export class PredictionService {
       { filters: { user_id: userId }, limit: 1 }
     );
     return res[0] ?? null;
-  }
-
-  private static async creditWallet(userId: string, amount: number) {
-    const wallet = await this.getWallet(userId);
-    if (!wallet) {
-      console.warn(`[predictions] No wallet for ${userId}, cannot credit ${amount}`);
-      return;
-    }
-    const current = Number(wallet.data.coins_balance ?? 0);
-    await db.updateDocument(WALLETS, wallet.id, {
-      coins_balance: current + amount,
-    });
   }
 }

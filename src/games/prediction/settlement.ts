@@ -67,9 +67,10 @@ export function computeSettlement(
   }
 
   const losersPool = totalPool - winnersStake;
-  const houseCut = Math.floor((losersPool * pct) / 100);
-  const distributable = losersPool - houseCut;
+  const baseHouseCut = Math.floor((losersPool * pct) / 100);
+  const distributablePool = losersPool - baseHouseCut;
 
+  let distributedBonus = 0;
   const payouts: SettlementPayout[] = bets.map((b) => {
     const won = b.option_index === winningOption;
     if (!won) {
@@ -82,7 +83,8 @@ export function computeSettlement(
         refunded: false,
       };
     }
-    const bonus = Math.floor((distributable * b.amount) / winnersStake);
+    const bonus = Math.floor((distributablePool * b.amount) / winnersStake);
+    distributedBonus += bonus;
     return {
       betId: b.id,
       userId: b.user_id,
@@ -93,12 +95,16 @@ export function computeSettlement(
     };
   });
 
+  // The house absorbs any integer-rounding remainder so nothing is lost:
+  // winnersStake (returned) + distributedBonus + houseCut === totalPool exactly.
+  const houseCut = losersPool - distributedBonus;
+
   return {
     totalPool,
     winnersStake,
     losersPool,
     houseCut,
-    distributable,
+    distributable: distributedBonus,
     refunded: false,
     payouts,
   };
