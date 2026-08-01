@@ -116,14 +116,13 @@ export class PredictionService {
     const amount = Math.floor(Number(input.amount));
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Invalid amount");
 
-    // Deduct stake from wallet (server-side, authoritative).
+    // Deduct stake from wallet (server-side, authoritative). syncWallet applies
+    // a delta (currentBalance + delta) — same convention as the aviator/pipshot
+    // engines. Awaited so the debit is confirmed before the bet is recorded.
     const wallet = await this.getWallet(input.user_id);
     if (!wallet) throw new Error("Wallet not found");
     const balance = Number(wallet.data.coins_balance ?? 0);
     if (balance < amount) throw new Error("Insufficient balance");
-    // syncWallet applies a delta (currentBalance + delta) — same convention as
-    // the aviator/pipshot engines. Awaited here so the debit is confirmed
-    // before the bet is recorded.
     await CocobaseHelper.syncWallet(input.user_id, -amount);
 
     const doc = await db.createDocument(BETS, {
@@ -173,10 +172,9 @@ export class PredictionService {
       market.data.house_percentage
     );
 
-    // Credit winners / refunds. Stakes were already debited when the bet was
-    // placed, so we credit the full payout (stake back + winnings) here.
-    // Awaited so a failed credit surfaces as an error instead of silently
-    // leaving a winner unpaid.
+    // Credit winners / refunds. Stakes were already debited at bet time, so we
+    // credit the full payout (stake back + winnings). Awaited so a failed
+    // credit surfaces as an error instead of silently leaving a winner unpaid.
     for (const p of settlement.payouts) {
       if (p.payout <= 0) continue;
       await CocobaseHelper.syncWallet(p.userId, p.payout);
